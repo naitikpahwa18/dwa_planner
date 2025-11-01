@@ -59,7 +59,7 @@ rosdep install --from-paths src --ignore-src -r -y
 ### 4️⃣ Clone the Custom DWA Planner
 ```bash
 cd ~/ros2_ws/src
-git clone https://github.com/naitikpahwa18/Local-DWA-Planner.git
+git clone https://github.com/naitikpahwa18/dwa_planner.git
 ```
 
 ---
