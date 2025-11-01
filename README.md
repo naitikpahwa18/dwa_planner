@@ -160,10 +160,6 @@ ros2 param set /dwa_planner goal_y 1.0
 
 | Issue | Cause | Fix |
 |--------|--------|-----|
-## ⚠️ Common Issues
-
-| Issue | Cause | Fix |
-|--------|--------|-----|
 | **Terminal 1 stuck at “spawn_entity”** | Environment variables or package sourcing not set correctly | Ensure the following lines exist in your `~/.bashrc`:<br><br>`source /opt/ros/humble/setup.bash`<br>`source ~/ros2_ws/install/setup.bash`<br><br>`export TURTLEBOT3_MODEL=burger`<br>`export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/usr/share/gazebo-11/models`<br>`export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:/opt/ros/humble/lib`<br>`export GAZEBO_RESOURCE_PATH=$GAZEBO_RESOURCE_PATH:/usr/share/gazebo-11` |
 | **Planner works only for certain goal points** | Algorithm parameters tuned for specific map/goal | Adjust cost weights, velocity limits, and goal tolerance in `dwa_node.py` for better generalization |
 | **Robot collides with obstacles** | Safety distance too low in obstacle cost calculation | Increase the obstacle cost or minimum safety distance parameter in `dwa_node.py` |
