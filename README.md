@@ -111,6 +111,14 @@ In RViz:
 
 ---
 
+### 🎥 Demo Videos
+
+- [Simulation](https://github.com/user-attachments/assets/ed4d53c5-4ff3-419b-8ff4-cb53d463bff1)
+- [Setting up ROS2 + Gazebo](https://github.com/user-attachments/assets/78ff8d20-d595-44f0-aad0-a8f674bebd01)
+
+---
+
+
 ## 🎯 Setting a Goal
 
 Use parameters to set the goal dynamically:
