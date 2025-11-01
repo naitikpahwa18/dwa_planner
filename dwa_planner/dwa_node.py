@@ -9,132 +9,132 @@ from sensor_msgs.msg import LaserScan
 from visualization_msgs.msg import Marker
 from tf_transformations import euler_from_quaternion
 
-# Global variables
 goal_x = None
 goal_y = None
-odom_info = None
-scan_info = None
-goal_done = False
+goal_angle = None
+odom_data = None
+scan_data = None
+goal_reached = False
 
 
-# Take goal coordinates from user
-def set_goal():
-    global goal_x, goal_y, goal_done
-    goal_x = float(input("Enter goal X: "))
-    goal_y = float(input("Enter goal Y: "))
-    goal_done = False
+def ask_for_goal():
+    global goal_x, goal_y, goal_reached
+
+    goal_x = float(input("Enter goal X : "))
+    goal_y = float(input("Enter goal Y : "))
+    goal_reached = False
 
 
-# Odometry callback
 def odom_callback(msg):
-    global odom_info
-    odom_info = msg
+    global odom_data
+    odom_data = msg
 
 
-# Laser scan callback
 def scan_callback(msg):
-    global scan_info
-    scan_info = msg
+    global scan_data
+    scan_data = msg
 
 
-# Predict how robot will move for given speed and turn
-def simulate_motion(linear_v, angular_v, dt):
-    if odom_info is None:
+def predict_motion(speed, turn_rate, step_time):
+    if odom_data is None:
         return []
 
-    x = odom_info.pose.pose.position.x
-    y = odom_info.pose.pose.position.y
-    orientation = odom_info.pose.pose.orientation
-    _, _, yaw = euler_from_quaternion([orientation.x, orientation.y, orientation.z, orientation.w])
+    x = odom_data.pose.pose.position.x
+    y = odom_data.pose.pose.position.y
+    orient = odom_data.pose.pose.orientation
+    roll, pitch, yaw = euler_from_quaternion([orient.x, orient.y, orient.z, orient.w])
 
-    predicted_path = []
-    for _ in range(100):
-        yaw += angular_v * dt
-        x += linear_v * math.cos(yaw) * dt
-        y += linear_v * math.sin(yaw) * dt
-        predicted_path.append((x, y))
+    path = []
+    for i in range(100):
+        yaw += turn_rate * step_time
+        x += speed * math.cos(yaw) * step_time
+        y += speed * math.sin(yaw) * step_time
+        path.append((x, y))
 
-    return predicted_path
+    return path
 
 
-# Check if path hits any obstacle
-def collision_check(path_points):
-    if scan_info is None:
+def check_for_collisions(path):
+    if scan_data is None:
         return -float('inf')
 
-    safe_gap = 0.3
-    for x, y in path_points:
-        dist = math.sqrt(x ** 2 + y ** 2)
-        index = int(math.atan2(y, x) * (len(scan_info.ranges) / (2 * math.pi)))
-        index = max(0, min(len(scan_info.ranges) - 1, index))
+    safety_margin = 0.3
 
-        if dist < scan_info.ranges[index] - safe_gap:
+    for x, y in path:
+        distance = math.sqrt(x**2 + y**2)
+        scan_index = int(math.atan2(y, x) * (len(scan_data.ranges) / (2 * math.pi)))
+        scan_index = max(0, min(len(scan_data.ranges) - 1, scan_index))
+
+        if distance < scan_data.ranges[scan_index] - safety_margin:
             return -100000
+
     return 0
 
 
-# Pick best motion from all options
-def pick_best_path(node, paths):
-    global goal_x, goal_y, goal_done
+def choose_best_path(node, possible_paths):
+    global goal_x, goal_y, goal_reached
 
-    if odom_info is None:
+    if odom_data is None:
         return 0.0, 0.0
 
-    curr_x = odom_info.pose.pose.position.x
-    curr_y = odom_info.pose.pose.position.y
-    orientation = odom_info.pose.pose.orientation
-    _, _, yaw = euler_from_quaternion([orientation.x, orientation.y, orientation.z, orientation.w])
+    current_x = odom_data.pose.pose.position.x
+    current_y = odom_data.pose.pose.position.y
+    orient = odom_data.pose.pose.orientation
+    roll, pitch, yaw = euler_from_quaternion([orient.x, orient.y, orient.z, orient.w])
 
-    dist_to_goal = math.hypot(goal_x - curr_x, goal_y - curr_y)
-    if dist_to_goal < 0.05:
-        if not goal_done:
-            goal_done = True
-            node.get_logger().info(f"Goal reached at ({goal_x}, {goal_y})")
+    distance_to_goal = math.hypot(goal_x - current_x, goal_y - current_y)
+    if distance_to_goal < 0.05:
+        if not goal_reached:
+            goal_reached = True
+            node.get_logger().info(f"Goal reached at ({goal_x}, {goal_y})!")
         return 0.0, 0.0
 
     best_score = float('-inf')
-    best_v, best_w = 0.05, 0.0
+    best_speed, best_turn = 0.05, 0.0
 
-    for v, w, path in paths:
-        goal_dist_score = -math.hypot(path[-1][0] - goal_x, path[-1][1] - goal_y) * 5
-        angle_to_goal = math.atan2(goal_y - curr_y, goal_x - curr_x)
-        heading_score = -abs(angle_to_goal - yaw) * 2
-        collision_score = collision_check(path)
-        smooth_score = -0.1 * abs(w)
+    for speed, turn, path in possible_paths:
+        goal_distance_score = -math.hypot(path[-1][0] - goal_x, path[-1][1] - goal_y) * 5
+        angle_diff = abs(math.atan2(goal_y - current_y, goal_x - current_x) - yaw)
+        heading_score = -angle_diff * 2
+        collision_risk = check_for_collisions(path)
+        smoothness_score = -0.1 * abs(turn)
 
-        total = goal_dist_score + heading_score + collision_score + smooth_score
+        total_score = goal_distance_score + heading_score + collision_risk + smoothness_score
+        if total_score > best_score:
+            best_score = total_score
+            best_speed, best_turn = speed, turn
 
-        if total > best_score:
-            best_score = total
-            best_v, best_w = v, w
-
-    return best_v, best_w
+    return best_speed, best_turn
 
 
-# Generate random paths continuously
-def make_paths(max_v, max_w, dt):
+
+def generate_infinite_paths(max_speed, max_turn, step_time):
     while True:
-        v = random.uniform(0, max_v)
-        w = random.uniform(-max_w, max_w)
-        yield (v, w, simulate_motion(v, w, dt))
+        speed = random.uniform(0, max_speed)
+        turn = random.uniform(-max_turn, max_turn)
 
 
-# Main movement logic
-def control_loop(node, cmd_pub, path_pub, max_v, max_w, dt):
-    global goal_done
+        path = predict_motion(speed, turn, step_time)
 
-    if odom_info is None or scan_info is None or goal_done:
+        yield (speed, turn, path)
+
+
+def movement_loop(node, cmd_publisher, path_publisher, max_speed, max_turn, step_time):
+    global goal_reached
+
+    if odom_data is None or scan_data is None or goal_reached:
         return
 
-    gen = make_paths(max_v, max_w, dt)
-    options = [next(gen) for _ in range(10000)]
 
-    v, w = pick_best_path(node, options)
+    path_generator = generate_infinite_paths(max_speed, max_turn, step_time)
+    possible_paths = [next(path_generator) for i in range(10000)]
 
-    move = Twist()
-    move.linear.x = v
-    move.angular.z = w
-    cmd_pub.publish(move)
+    speed, turn = choose_best_path(node, possible_paths)
+
+    move_cmd = Twist()
+    move_cmd.linear.x = speed
+    move_cmd.angular.z = turn
+    cmd_publisher.publish(move_cmd)
 
     marker = Marker()
     marker.header.frame_id = "base_link"
@@ -144,32 +144,32 @@ def control_loop(node, cmd_pub, path_pub, max_v, max_w, dt):
     marker.color.r = 1.0
     marker.color.a = 0.5
 
-    for _, _, path in options:
+    for _, _, path in possible_paths:
         for x, y in path:
-            p = Point()
-            p.x = x
-            p.y = y
-            marker.points.append(p)
+            point = Point()
+            point.x = x
+            point.y = y
+            marker.points.append(point)
 
-    path_pub.publish(marker)
+    path_publisher.publish(marker)
 
 
 def main():
     rclpy.init()
     node = Node('dwa_planner')
 
-    set_goal()
+    ask_for_goal()
 
     node.create_subscription(Odometry, '/odom', odom_callback, 10)
     node.create_subscription(LaserScan, '/scan', scan_callback, 10)
-    cmd_pub = node.create_publisher(Twist, '/cmd_vel', 10)
-    path_pub = node.create_publisher(Marker, '/visual_paths', 10)
+    cmd_publisher = node.create_publisher(Twist, '/cmd_vel', 10)
+    path_publisher = node.create_publisher(Marker, '/visual_paths', 10)
 
-    max_v = 0.15
-    max_w = 2.5
-    dt = 0.1
+    max_speed = 0.15
+    max_turn = 2.5
+    step_time = 0.1
 
-    node.create_timer(dt, lambda: control_loop(node, cmd_pub, path_pub, max_v, max_w, dt))
+    node.create_timer(step_time, lambda: movement_loop(node, cmd_publisher, path_publisher, max_speed, max_turn, step_time))
 
     rclpy.spin(node)
     node.destroy_node()
