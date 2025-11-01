@@ -1,0 +1,16 @@
+dwa_planner:
+  ros__parameters:
+    v_max: 0.22
+    v_min: 0.0
+    omega_max: 1.0
+    predict_time: 1.2
+    dt: 0.1
+    v_samples: 7
+    w_samples: 15
+    goal_x: 2.0
+    goal_y: 0.0
+    robot_radius: 0.18
+    safety_dist: 0.12
+    w_goal: 1.0
+    w_obs: 1.0
+    w_smooth: 0.1
