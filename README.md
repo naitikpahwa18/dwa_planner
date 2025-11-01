@@ -95,8 +95,6 @@ ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
 source /opt/ros/humble/setup.bash
 source ~/ros2_ws/install/setup.bash
 ros2 run dwa_planner dwa_node
-# OR using the launch file:
-ros2 launch dwa_planner dwa_launch.py
 ```
 
 **Terminal 3 – Visualize in RViz**
@@ -162,10 +160,16 @@ ros2 param set /dwa_planner goal_y 1.0
 
 | Issue | Cause | Fix |
 |--------|--------|-----|
-| Works smoothly only for few goal points | Algorithm | Optimizing Current Algorithm |
-| Robot Collides Obstacles | Safety Distance | Increase Safety Distance in `dwa_node.py`|
-| Robot slows too much near obstacles | Cost weights need tuning | Adjust `heading_weight`, `obs_weight`, and `velocity_weight` in `dwa_node.py` |
-| Build errors | Old cache | `rm -rf build/ install/ log/ && colcon build` |
+## ⚠️ Common Issues
+
+| Issue | Cause | Fix |
+|--------|--------|-----|
+| **Terminal 1 stuck at “spawn_entity”** | Environment variables or package sourcing not set correctly | Ensure the following lines exist in your `~/.bashrc`:<br><br>`source /opt/ros/humble/setup.bash`<br>`source ~/ros2_ws/install/setup.bash`<br><br>`export TURTLEBOT3_MODEL=burger`<br>`export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/usr/share/gazebo-11/models`<br>`export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:/opt/ros/humble/lib`<br>`export GAZEBO_RESOURCE_PATH=$GAZEBO_RESOURCE_PATH:/usr/share/gazebo-11` |
+| **Planner works only for certain goal points** | Algorithm parameters tuned for specific map/goal | Adjust cost weights, velocity limits, and goal tolerance in `dwa_node.py` for better generalization |
+| **Robot collides with obstacles** | Safety distance too low in obstacle cost calculation | Increase the obstacle cost or minimum safety distance parameter in `dwa_node.py` |
+| **Robot slows excessively near obstacles** | Cost weights imbalance | Tune the weights for `heading_weight`, `obs_weight`, and `velocity_weight` in `dwa_node.py` |
+| **Build errors or missing packages** | Stale build, missing dependencies | Clean the workspace and rebuild:<br>`rm -rf build/ install/ log/`<br>`colcon build --packages-select dwa_planner`<br>`source install/setup.bash` |
+
 ---
 
 ## 🧠 Acknowledgements
