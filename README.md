@@ -62,6 +62,14 @@ cd ~/ros2_ws/src
 git clone https://github.com/naitikpahwa18/dwa_planner.git
 ```
 
+### 5️⃣ Update Bashrc with Gazebo Environment Variables
+```bash
+echo "export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/usr/share/gazebo-11/models" >> ~/.bashrc
+echo "export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:/opt/ros/humble/lib" >> ~/.bashrc
+echo "export GAZEBO_RESOURCE_PATH=$GAZEBO_RESOURCE_PATH:/usr/share/gazebo-11" >> ~/.bashrc
+source ~/.bashrc
+```
+
 ---
 
 ## 🧱 Build & Run
