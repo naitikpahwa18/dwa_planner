@@ -22,7 +22,7 @@ To design and implement a DWA-based local planner that:
 |------------|----------|
 | Ubuntu | 22.04 LTS |
 | ROS2 | Humble Hawksbill |
-| Gazebo | Classic |
+| Gazebo | Classic (11.10.2) |
 | TurtleBot3 | burger / waffle |
 | Python | ≥ 3.8 |
 
