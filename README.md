@@ -34,35 +34,29 @@ To design and implement a DWA-based local planner that:
 ```bash
 sudo apt update
 sudo apt install ros-humble-desktop -y
+sudo apt install ros-humble-turtlebot3* -y
 sudo apt install -y ros-humble-gazebo-ros-pkgs ros-humble-gazebo-ros2-control
 echo "export TURTLEBOT3_MODEL=burger" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### 2️⃣ Clone Dependencies
+### 2️⃣ Install Dependencies
 ```bash
-cd ~/ros2_ws/src
-git clone -b humble https://github.com/ROBOTIS-GIT/turtlebot3_simulations.git
-git clone -b humble https://github.com/ROBOTIS-GIT/turtlebot3.git
-git clone -b humble https://github.com/ROBOTIS-GIT/turtlebot3_msgs.git
-git clone -b humble https://github.com/ROBOTIS-GIT/DynamixelSDK.git
-```
-
-### 3️⃣ Install Dependencies
-```bash
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws
 sudo apt install -y python3-colcon-common-extensions python3-pip python3-rosdep
 sudo rosdep init || true
 rosdep update
 rosdep install --from-paths src --ignore-src -r -y
 ```
 
-### 4️⃣ Clone the Custom DWA Planner
+### 3️⃣ Clone the Custom DWA Planner
 ```bash
 cd ~/ros2_ws/src
 git clone https://github.com/naitikpahwa18/dwa_planner.git
 ```
 
-### 5️⃣ Update Bashrc with Gazebo Environment Variables
+### 4️⃣ Update Bashrc with Gazebo Environment Variables
 ```bash
 echo "export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/usr/share/gazebo-11/models" >> ~/.bashrc
 echo "export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:/opt/ros/humble/lib" >> ~/.bashrc
